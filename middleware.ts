@@ -1,13 +1,14 @@
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+export { default } from "next-auth/middleware";
 
-// Cette fonction est obligatoire et doit être exportée
-export function middleware(request: NextRequest) {
-  // Par défaut, on laisse passer la requête
-  return NextResponse.next();
-}
-
-// Optionnel : vous pouvez définir les routes concernées ici
+// Toutes les routes listées ici nécessitent d'être connecté.
+// Si l'utilisateur n'a pas de session, il est redirigé vers /login (défini dans authOptions.pages.signIn)
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+  matcher: [
+    "/lobby/:path*",
+    "/profile/:path*",
+    "/leaderboard/:path*",
+    "/history/:path*",
+    "/shop/:path*",
+    "/admin/:path*",
+  ],
 };
