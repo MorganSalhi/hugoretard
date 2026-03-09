@@ -1,7 +1,21 @@
-export { default } from "next-auth/middleware";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
-// Toutes les routes listées ici nécessitent d'être connecté.
-// Si l'utilisateur n'a pas de session, il est redirigé vers /login (défini dans authOptions.pages.signIn)
+export async function middleware(request: NextRequest) {
+  const token = await getToken({ 
+    req: request, 
+    secret: process.env.NEXTAUTH_SECRET 
+  });
+
+  // Si pas de session, on redirige vers /login
+  if (!token) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  return NextResponse.next();
+}
+
 export const config = {
   matcher: [
     "/lobby/:path*",
