@@ -21,7 +21,7 @@ export default function LoginPage() {
     });
 
     if (res?.ok) {
-      router.push("/lobby");
+      router.push("/intro");
     } else {
       alert("Accès refusé : Identifiants invalides.");
       setLoading(false);
