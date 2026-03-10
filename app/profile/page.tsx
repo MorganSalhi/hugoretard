@@ -7,6 +7,7 @@ import { BADGE_DEFINITIONS, checkAndAwardBadges } from "@/lib/badges";
 import * as Icons from "lucide-react";
 import ProfileStats from "@/components/ProfileStats";
 import ProfileAvatar from "@/components/ProfileAvatar"; // Le fameux composant d'upload
+import ProfileNameEdit from "@/components/ProfileNameEdit";
 
 export default async function ProfilePage() {
   const session = await getServerSession();
@@ -43,11 +44,13 @@ export default async function ProfilePage() {
       {/* HEADER AGENT - Restructuré exactement comme à l'origine (Centré) */}
       <header className="mb-10 text-center flex flex-col items-center justify-center">
         <div className="mb-4">
-          {/* L'avatar remplace l'ancienne icône bleue fixe */}
           <ProfileAvatar initialImage={user.image || null} userName={user.name || "Adjoint"} />
         </div>
-        <h1 className="text-3xl font-black italic tracking-tighter uppercase">{user.name}</h1>
-        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">{user.email}</p>
+
+        {/* NOUVEAU COMPOSANT D'EDITION */}
+        <ProfileNameEdit initialName={user.name || "Adjoint"} />
+
+        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">{user.email}</p>
       </header>
 
       {/* CARTE DU GRADE ACTUEL */}
