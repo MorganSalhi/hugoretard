@@ -4,22 +4,19 @@ import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { getPoliceRank, getRankProgress } from "@/lib/ranks";
 import { BADGE_DEFINITIONS, checkAndAwardBadges } from "@/lib/badges";
-import * as Icons from "lucide-react"; // Import de toutes les icônes pour le mapping dynamique
+import * as Icons from "lucide-react";
 import ProfileStats from "@/components/ProfileStats";
-import ProfileAvatar from "@/components/ProfileAvatar";
+import ProfileAvatar from "@/components/ProfileAvatar"; // Le fameux composant d'upload
 
 export default async function ProfilePage() {
   const session = await getServerSession();
   if (!session?.user?.email) redirect("/login");
 
-  // 1. VÉRIFICATION RÉACTIVE DES BADGES
-  // Permet de débloquer les succès (ex: Millionnaire) suite à une modif manuelle de la DB
   const tempUser = await prisma.user.findUnique({ where: { email: session.user.email } });
   if (tempUser) {
     await checkAndAwardBadges(tempUser.id);
   }
 
-  // 2. RÉCUPÉRATION COMPLÈTE DES DONNÉES MISES À JOUR
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
     include: {
@@ -41,16 +38,16 @@ export default async function ProfilePage() {
   const unlockedBadges = new Set(user.badges.map(b => b.type));
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-12 pb-32 font-sans max-w-7xl mx-auto">
-      <header className="mb-12 flex flex-col md:flex-row items-center gap-8 text-center md:text-left border-b border-slate-900 pb-12">
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 pb-32 font-sans">
 
-        {/* On remplace l'ancienne icône fixe par l'Avatar interactif */}
-        <ProfileAvatar initialImage={user.image || null} userName={user.name || "Adjoint"} />
-
-        <div>
-          <h1 className="text-4xl md:text-7xl font-black italic tracking-tighter uppercase">{user.name}</h1>
-          <p className="text-slate-500 font-bold uppercase tracking-[0.4em] mt-2">{user.email}</p>
+      {/* HEADER AGENT - Restructuré exactement comme à l'origine (Centré) */}
+      <header className="mb-10 text-center flex flex-col items-center justify-center">
+        <div className="mb-4">
+          {/* L'avatar remplace l'ancienne icône bleue fixe */}
+          <ProfileAvatar initialImage={user.image || null} userName={user.name || "Adjoint"} />
         </div>
+        <h1 className="text-3xl font-black italic tracking-tighter uppercase">{user.name}</h1>
+        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">{user.email}</p>
       </header>
 
       {/* CARTE DU GRADE ACTUEL */}
