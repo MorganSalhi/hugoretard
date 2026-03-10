@@ -3,9 +3,10 @@ import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
 import { getPoliceRank, getRankProgress } from "@/lib/ranks";
-import { BADGE_DEFINITIONS, checkAndAwardBadges } from "@/lib/badges"; 
+import { BADGE_DEFINITIONS, checkAndAwardBadges } from "@/lib/badges";
 import * as Icons from "lucide-react"; // Import de toutes les icônes pour le mapping dynamique
 import ProfileStats from "@/components/ProfileStats";
+import ProfileAvatar from "@/components/ProfileAvatar";
 
 export default async function ProfilePage() {
   const session = await getServerSession();
@@ -21,13 +22,13 @@ export default async function ProfilePage() {
   // 2. RÉCUPÉRATION COMPLÈTE DES DONNÉES MISES À JOUR
   const user = await prisma.user.findUnique({
     where: { email: session.user.email },
-    include: { 
-      badges: true, 
+    include: {
+      badges: true,
       bets: {
         include: { course: true },
         orderBy: { createdAt: 'desc' }
       },
-      _count: { select: { bets: true } } 
+      _count: { select: { bets: true } }
     }
   });
 
@@ -40,14 +41,16 @@ export default async function ProfilePage() {
   const unlockedBadges = new Set(user.badges.map(b => b.type));
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-6 pb-32 font-sans">
-      {/* HEADER AGENT */}
-      <header className="mb-10 text-center">
-        <div className="inline-flex p-4 rounded-full bg-slate-900 border border-slate-800 mb-4 shadow-2xl">
-          <Icons.User size={48} className="text-indigo-500" />
+    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-12 pb-32 font-sans max-w-7xl mx-auto">
+      <header className="mb-12 flex flex-col md:flex-row items-center gap-8 text-center md:text-left border-b border-slate-900 pb-12">
+
+        {/* On remplace l'ancienne icône fixe par l'Avatar interactif */}
+        <ProfileAvatar initialImage={user.image || null} userName={user.name || "Adjoint"} />
+
+        <div>
+          <h1 className="text-4xl md:text-7xl font-black italic tracking-tighter uppercase">{user.name}</h1>
+          <p className="text-slate-500 font-bold uppercase tracking-[0.4em] mt-2">{user.email}</p>
         </div>
-        <h1 className="text-3xl font-black italic tracking-tighter uppercase">{user.name}</h1>
-        <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em]">{user.email}</p>
       </header>
 
       {/* CARTE DU GRADE ACTUEL */}
@@ -69,7 +72,7 @@ export default async function ProfilePage() {
               <p className="text-xs font-mono font-bold text-indigo-400">-{progress.needed.toLocaleString()} ₪</p>
             </div>
             <div className="h-4 w-full bg-slate-950 rounded-full border border-slate-800 overflow-hidden">
-              <div 
+              <div
                 className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 transition-all duration-1000 shadow-[0_0_15px_rgba(79,70,229,0.5)]"
                 style={{ width: `${progress.percentage}%` }}
               />
@@ -119,16 +122,16 @@ export default async function ProfilePage() {
         <div className="grid grid-cols-4 sm:grid-cols-6 gap-4">
           {Object.entries(BADGE_DEFINITIONS).map(([type, details]) => {
             const isUnlocked = unlockedBadges.has(type);
-            
+
             // Sélection dynamique de l'icône correspondante
             const IconComponent = (Icons as any)[details.icon] || Icons.Award;
-            
+
             return (
               <div key={type} className="group relative flex flex-col items-center">
                 <div className={`
                   p-3 rounded-2xl border transition-all duration-500
-                  ${isUnlocked 
-                    ? `bg-slate-900 border-slate-700 ${details.color} shadow-[0_0_15px_rgba(0,0,0,0.4)]` 
+                  ${isUnlocked
+                    ? `bg-slate-900 border-slate-700 ${details.color} shadow-[0_0_15px_rgba(0,0,0,0.4)]`
                     : 'bg-slate-900/20 border-slate-800/50 text-slate-600 opacity-40'}
                 `}>
                   <IconComponent size={24} />
@@ -137,15 +140,15 @@ export default async function ProfilePage() {
                 {/* Tooltip détaillé */}
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 w-40 p-3 bg-slate-900 border border-slate-800 rounded-xl opacity-0 group-hover:opacity-100 transition-all pointer-events-none z-30 shadow-2xl">
                   <p className={`text-[10px] font-black uppercase mb-1 ${isUnlocked ? details.color : 'text-slate-500'}`}>
-                      {isUnlocked ? details.label : "Verrouillé"}
+                    {isUnlocked ? details.label : "Verrouillé"}
                   </p>
                   <p className="text-[8px] text-slate-400 leading-relaxed">
-                      {details.description}
+                    {details.description}
                   </p>
                   {!isUnlocked && (
-                      <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-center gap-1 text-[7px] text-slate-600 font-bold uppercase">
-                          <Icons.Lock size={8} /> Mission requise
-                      </div>
+                    <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-center gap-1 text-[7px] text-slate-600 font-bold uppercase">
+                      <Icons.Lock size={8} /> Mission requise
+                    </div>
                   )}
                 </div>
               </div>
@@ -157,11 +160,11 @@ export default async function ProfilePage() {
       {/* BUREAU DES STATISTIQUES (GRAPHIQUES) */}
       <div className="mt-10 border-t border-slate-900 pt-10">
         <header className="mb-6">
-            <div className="flex items-center gap-2 mb-1">
-                <Icons.Target size={14} className="text-indigo-500" />
-                <h2 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Renseignement et Analyse</h2>
-            </div>
-            <p className="text-lg font-black italic uppercase">Rapport de matraquage</p>
+          <div className="flex items-center gap-2 mb-1">
+            <Icons.Target size={14} className="text-indigo-500" />
+            <h2 className="text-[10px] font-black uppercase text-slate-500 tracking-[0.2em]">Renseignement et Analyse</h2>
+          </div>
+          <p className="text-lg font-black italic uppercase">Rapport de matraquage</p>
         </header>
         <ProfileStats bets={user.bets} />
       </div>

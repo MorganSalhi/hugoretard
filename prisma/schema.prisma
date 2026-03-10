@@ -9,18 +9,19 @@ generator client {
 }
 
 model User {
-  id            String     @id @default(cuid())
+  id            String       @id @default(cuid())
   name          String
-  email         String     @unique
+  email         String       @unique
   password      String?
-  walletBalance Int        @default(1000)
-  role          Role       @default(USER)
+  image         String?      // <--- VÉRIFIE QUE CETTE LIGNE EST BIEN LÀ
+  walletBalance Int          @default(1000)
+  role          Role         @default(USER)
+  createdAt     DateTime     @default(now())
+  currentStreak Int          @default(0)
+  bestStreak    Int          @default(0)
   bets          Bet[]
-  items         UserItem[] 
-  badges        Badge[]    
-  createdAt     DateTime   @default(now())
-  currentStreak Int        @default(0) 
-  bestStreak    Int        @default(0)
+  items         UserItem[]
+  badges        Badge[]
 }
 
 model Course {

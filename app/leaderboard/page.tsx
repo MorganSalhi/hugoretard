@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { POLICE_RANKS } from "@/lib/ranks";
 import { getServerSession } from "next-auth";
 import { redirect } from "next/navigation";
-import { Shield, Target, Flame, Trophy, TrendingUp, Skull, ShieldAlert } from "lucide-react"; 
+import { Shield, Target, Flame, Trophy, TrendingUp, Skull, ShieldAlert } from "lucide-react";
 
 export default async function LeaderboardPage() {
     const session = await getServerSession();
@@ -34,7 +34,7 @@ export default async function LeaderboardPage() {
             <div className="space-y-8">
                 {reversedRanks.map((rank, idx) => {
                     const nextRank = reversedRanks[idx - 1];
-                    const usersInRank = allUsers.filter(u => 
+                    const usersInRank = allUsers.filter(u =>
                         u.walletBalance >= rank.min && (nextRank ? u.walletBalance < nextRank.min : true)
                     );
 
@@ -59,14 +59,18 @@ export default async function LeaderboardPage() {
                                                 </div>
                                             )}
                                             <div className="flex items-center gap-4">
-                                                <div className="w-9 h-9 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400">
-                                                    {user.name.substring(0, 2).toUpperCase()}
+                                                <div className="w-10 h-10 rounded-full bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400 overflow-hidden border border-slate-700 shrink-0">
+                                                    {user.image ? (
+                                                        <img src={user.image} alt={user.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        user.name.substring(0, 2).toUpperCase()
+                                                    )}
                                                 </div>
                                                 <div>
                                                     <span className="font-bold text-xs text-slate-200 block">{user.name}</span>
                                                     <div className="flex items-center gap-3 mt-1.5">
-                                                        <div className="flex items-center gap-0.5 text-[9px] font-black text-orange-500"><Flame size={10}/> {user.currentStreak}</div>
-                                                        <div className="flex items-center gap-0.5 text-[9px] font-black text-slate-600"><TrendingUp size={10}/> {user._count.bets} PV</div>
+                                                        <div className="flex items-center gap-0.5 text-[9px] font-black text-orange-500"><Flame size={10} /> {user.currentStreak}</div>
+                                                        <div className="flex items-center gap-0.5 text-[9px] font-black text-slate-600"><TrendingUp size={10} /> {user._count.bets} PV</div>
                                                     </div>
                                                 </div>
                                             </div>
