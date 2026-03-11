@@ -143,10 +143,14 @@ export default function AdminPage() {
 
     // LA FONCTION CORRIGÉE POUR INJECTER L'ARGENT
     const onInjectMoney = async (userId: string) => {
-        const amount = creditAmounts[userId];
+        if (!userId) {
+            return toast.error("Erreur : Impossible d'identifier cet agent.");
+        }
 
-        if (!amount || amount <= 0) {
-            return toast.error("Somme invalide, veuillez entrer un montant.");
+        const amount = Number(creditAmounts[userId]);
+
+        if (isNaN(amount) || amount <= 0) {
+            return toast.error("Somme invalide, veuillez entrer un montant valide (> 0).");
         }
 
         setLoading(true);
@@ -161,9 +165,7 @@ export default function AdminPage() {
 
             if (res.ok) {
                 toast.success("Fonds de saisie injectés !", { id: tId });
-                // Réinitialiser le champ d'input de cet agent
                 setCreditAmounts(prev => ({ ...prev, [userId]: 0 }));
-                // Rafraîchir les données pour afficher le nouveau solde
                 fetchData();
             } else {
                 const err = await res.json();
@@ -281,8 +283,14 @@ export default function AdminPage() {
                                             <input
                                                 type="number"
                                                 placeholder="+ ₪"
-                                                value={creditAmounts[agent.id] || ""}
-                                                onChange={(e) => setCreditAmounts(prev => ({ ...prev, [agent.id]: e.target.value ? Number(e.target.value) : 0 }))}
+                                                value={creditAmounts[agent.id] === undefined || creditAmounts[agent.id] === 0 ? "" : creditAmounts[agent.id]}
+                                                onChange={(e) => {
+                                                    const val = e.target.value;
+                                                    setCreditAmounts(prev => ({
+                                                        ...prev,
+                                                        [agent.id]: val ? Number(val) : 0
+                                                    }));
+                                                }}
                                                 className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-1 text-sm outline-none focus:border-amber-500 font-mono transition-all"
                                             />
                                             <button

@@ -3,7 +3,10 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
-// 1. RÉCUPÉRER LA LISTE DES AGENTS (Méthode GET)
+// TRÈS IMPORTANT : Désactive le cache pour cette route admin
+export const dynamic = 'force-dynamic';
+
+// 1. RÉCUPÉRER LA LISTE DES AGENTS
 export async function GET() {
   try {
     const users = await prisma.user.findMany({
@@ -16,7 +19,7 @@ export async function GET() {
   }
 }
 
-// 2. CRÉER UN NOUVEL AGENT (Méthode POST)
+// 2. CRÉER UN NOUVEL AGENT
 export async function POST(req: Request) {
   try {
     const { name, email, initialBalance, password, role } = await req.json();
@@ -26,7 +29,7 @@ export async function POST(req: Request) {
       data: {
         name,
         email,
-        walletBalance: Number(initialBalance) || 1000, // Conversion forcée en nombre
+        walletBalance: Number(initialBalance) || 1000,
         password: hashedPassword,
         role: role || "USER",
       },
@@ -38,20 +41,24 @@ export async function POST(req: Request) {
   }
 }
 
-// 3. INJECTER DES FONDS À UN AGENT (Méthode PATCH - Celle qui te manquait !)
+// 3. INJECTER DES FONDS À UN AGENT
 export async function PATCH(req: Request) {
   try {
-    const { userId, amount } = await req.json();
+    const body = await req.json();
+    const { userId, amount } = body;
 
-    if (!userId || !amount) {
-      return NextResponse.json({ error: "Données invalides (ID ou montant manquant)" }, { status: 400 });
+    // SÉCURITÉ : Vérification ultra-stricte + Message d'erreur détaillé
+    if (!userId || amount === undefined || amount === null || isNaN(Number(amount))) {
+      return NextResponse.json({
+        error: `Bavure de transfert. Reçu -> ID: ${userId || "VIDE"}, Montant: ${amount || "VIDE"}`
+      }, { status: 400 });
     }
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         walletBalance: {
-          increment: Number(amount) // On incrémente le solde du montant spécifié
+          increment: Number(amount) // On force la conversion en nombre
         }
       }
     });
@@ -59,6 +66,6 @@ export async function PATCH(req: Request) {
     return NextResponse.json(updatedUser);
   } catch (error: any) {
     console.error("Erreur Prisma PATCH:", error);
-    return NextResponse.json({ error: "Erreur lors de l'ajout des fonds" }, { status: 500 });
+    return NextResponse.json({ error: "Erreur serveur : " + error.message }, { status: 500 });
   }
 }
