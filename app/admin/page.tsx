@@ -1,19 +1,19 @@
+// app/admin/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useSession } from "next-auth/react"; // Pour vérifier l'identité de l'admin
+import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { CreateCourseSchema, CreateUserSchema } from "@/lib/validations";
+import toast from "react-hot-toast"; // <-- On importe nos notifications stylées !
 import {
     ShieldAlert,
     PlusCircle,
     CheckCircle2,
-    Clock,
     Loader2,
     Gavel,
-    RefreshCcw,
     Users,
     UserPlus,
     HandCoins,
@@ -27,18 +27,14 @@ export default function AdminPage() {
     const [loading, setLoading] = useState(false);
     const [fetching, setFetching] = useState(true);
 
-    // 🛡️ SÉCURITÉ : Remplace par ton email d'admin réel
     const ADMIN_EMAIL = "morgangsxr1@gmail.com";
 
-    // États pour les cours
     const [activeCourses, setActiveCourses] = useState<any[]>([]);
     const [actualTimes, setActualTimes] = useState<{ [key: string]: string }>({});
 
-    // États pour les utilisateurs
     const [agents, setAgents] = useState<any[]>([]);
     const [creditAmounts, setCreditAmounts] = useState<{ [key: string]: number }>({});
 
-    // Formulaires
     const courseForm = useForm({ resolver: zodResolver(CreateCourseSchema) });
     const userForm = useForm({ resolver: zodResolver(CreateUserSchema) });
 
@@ -56,7 +52,7 @@ export default function AdminPage() {
             }
             if (usersRes.ok) setAgents(await usersRes.json());
         } catch (error) {
-            console.error("Erreur de synchro");
+            toast.error("Erreur de synchronisation avec le serveur");
         } finally {
             setFetching(false);
         }
@@ -68,7 +64,6 @@ export default function AdminPage() {
         }
     }, [status, session]);
 
-    // Redirections de sécurité
     if (status === "loading") return (
         <div className="min-h-screen bg-slate-950 flex items-center justify-center">
             <Loader2 className="animate-spin text-indigo-500" size={48} />
@@ -76,9 +71,10 @@ export default function AdminPage() {
     );
     if (!session || session.user?.email !== ADMIN_EMAIL) redirect("/lobby");
 
-    // LOGIQUE COURS
+    // --- LOGIQUE COURS ---
     const onCreateCourse = async (data: any) => {
         setLoading(true);
+        const tId = toast.loading("Ouverture du dossier...");
         try {
             const res = await fetch("/api/courses", {
                 method: "POST",
@@ -86,30 +82,46 @@ export default function AdminPage() {
                 body: JSON.stringify(data),
             });
             if (res.ok) {
-                alert("Dossier ouvert !");
+                toast.success("Dossier de surveillance ouvert !", { id: tId });
                 courseForm.reset();
                 fetchData();
+            } else {
+                toast.error("Bavure lors de l'ouverture", { id: tId });
             }
+        } catch (err) {
+            toast.error("Standard injoignable", { id: tId });
         } finally { setLoading(false); }
     };
 
     const onResolveCourse = async (courseId: string) => {
         const actualTime = actualTimes[courseId];
-        if (!actualTime || !/^([01]\d|2[0-3]):([0-5]\d)$/.test(actualTime)) return alert("Format HH:mm requis");
+        if (!actualTime || !/^([01]\d|2[0-3]):([0-5]\d)$/.test(actualTime)) {
+            return toast.error("Format de l'heure invalide (HH:mm)");
+        }
         setLoading(true);
+        const tId = toast.loading("Classement de l'affaire...");
         try {
             const res = await fetch("/api/resolve", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ courseId, actualTime }),
             });
-            if (res.ok) { alert("Verdict rendu !"); fetchData(); }
+            if (res.ok) {
+                toast.success("Verdict rendu avec succès !", { id: tId });
+                fetchData();
+            } else {
+                const err = await res.json();
+                toast.error(err.error || "Erreur de classement", { id: tId });
+            }
+        } catch (err) {
+            toast.error("Standard injoignable", { id: tId });
         } finally { setLoading(false); }
     };
 
-    // LOGIQUE AGENTS
+    // --- LOGIQUE AGENTS ---
     const onCreateUser = async (data: any) => {
         setLoading(true);
+        const tId = toast.loading("Recrutement en cours...");
         try {
             const res = await fetch("/api/admin/users", {
                 method: "POST",
@@ -117,32 +129,51 @@ export default function AdminPage() {
                 body: JSON.stringify(data),
             });
             if (res.ok) {
-                alert("Nouvel agent recruté avec succès !");
+                toast.success("Nouvel Adjoint enrôlé !", { id: tId });
                 userForm.reset();
                 fetchData();
             } else {
                 const err = await res.json();
-                alert(err.error);
+                toast.error(err.error || "Bavure au recrutement", { id: tId });
             }
+        } catch (err) {
+            toast.error("Standard injoignable", { id: tId });
         } finally { setLoading(false); }
     };
 
+    // LA FONCTION CORRIGÉE POUR INJECTER L'ARGENT
     const onInjectMoney = async (userId: string) => {
         const amount = creditAmounts[userId];
-        if (!amount || amount <= 0) return alert("Somme invalide");
+
+        if (!amount || amount <= 0) {
+            return toast.error("Somme invalide, veuillez entrer un montant.");
+        }
+
         setLoading(true);
+        const tId = toast.loading("Versement du Bakchich...");
+
         try {
             const res = await fetch("/api/admin/users", {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ userId, amount }),
             });
+
             if (res.ok) {
-                alert("Shekels injectés !");
+                toast.success("Fonds de saisie injectés !", { id: tId });
+                // Réinitialiser le champ d'input de cet agent
                 setCreditAmounts(prev => ({ ...prev, [userId]: 0 }));
+                // Rafraîchir les données pour afficher le nouveau solde
                 fetchData();
+            } else {
+                const err = await res.json();
+                toast.error(err.error || "Erreur de virement", { id: tId });
             }
-        } finally { setLoading(false); }
+        } catch (err) {
+            toast.error("Standard injoignable", { id: tId });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -189,7 +220,7 @@ export default function AdminPage() {
                     <section className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 shadow-xl h-fit">
                         <div className="flex items-center gap-2 mb-6 text-green-400">
                             <CheckCircle2 size={20} />
-                            <h2 className="text-lg font-bold">Verdict HugoLate</h2>
+                            <h2 className="text-lg font-bold">Verdict IGPN</h2>
                         </div>
                         {activeCourses.length > 0 ? (
                             <div className="space-y-4">
@@ -198,7 +229,7 @@ export default function AdminPage() {
                                         <h3 className="font-bold text-indigo-400 mb-4">{course.subject}</h3>
                                         <div className="flex items-end gap-3">
                                             <input type="text" placeholder="HH:mm" value={actualTimes[course.id] || ""} onChange={(e) => setActualTimes(prev => ({ ...prev, [course.id]: e.target.value }))} className="flex-1 bg-slate-900 border border-slate-800 rounded-xl p-2 outline-none font-mono" />
-                                            <button onClick={() => onResolveCourse(course.id)} className="bg-green-600 p-2.5 rounded-xl"><CheckCircle2 size={20} /></button>
+                                            <button disabled={loading} onClick={() => onResolveCourse(course.id)} className="bg-green-600 p-2.5 rounded-xl disabled:opacity-50"><CheckCircle2 size={20} /></button>
                                         </div>
                                     </div>
                                 ))}
@@ -232,23 +263,40 @@ export default function AdminPage() {
                             <HandCoins size={20} />
                             <h2 className="text-lg font-bold">Effectifs & Budget</h2>
                         </div>
-                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                            {agents.map((agent) => (
-                                <div key={agent.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <p className="font-bold">{agent.name}</p>
-                                            <p className="text-[10px] text-slate-500 uppercase">{agent.email}</p>
+                        {fetching ? (
+                            <div className="flex justify-center py-10"><Loader2 className="animate-spin text-amber-500" /></div>
+                        ) : (
+                            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                                {agents.map((agent) => (
+                                    <div key={agent.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
+                                        <div className="flex justify-between items-start">
+                                            <div>
+                                                <p className="font-bold">{agent.name}</p>
+                                                <p className="text-[10px] text-slate-500 uppercase">{agent.email}</p>
+                                            </div>
+                                            <p className="font-mono text-amber-400 font-bold">{agent.walletBalance.toLocaleString()} ₪</p>
                                         </div>
-                                        <p className="font-mono text-amber-400 font-bold">{agent.walletBalance} ₪</p>
+                                        <div className="flex gap-2">
+                                            {/* On sécurise le format de l'input pour être sûr de récupérer un Nombre */}
+                                            <input
+                                                type="number"
+                                                placeholder="+ ₪"
+                                                value={creditAmounts[agent.id] || ""}
+                                                onChange={(e) => setCreditAmounts(prev => ({ ...prev, [agent.id]: e.target.value ? Number(e.target.value) : 0 }))}
+                                                className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-1 text-sm outline-none focus:border-amber-500 font-mono transition-all"
+                                            />
+                                            <button
+                                                disabled={loading}
+                                                onClick={() => onInjectMoney(agent.id)}
+                                                className="bg-amber-600 hover:bg-amber-500 p-2 rounded-xl transition-all disabled:opacity-50"
+                                            >
+                                                <HandCoins size={16} />
+                                            </button>
+                                        </div>
                                     </div>
-                                    <div className="flex gap-2">
-                                        <input type="number" placeholder="+ ₪" value={creditAmounts[agent.id] || ""} onChange={(e) => setCreditAmounts(prev => ({ ...prev, [agent.id]: parseInt(e.target.value) }))} className="flex-1 bg-slate-900 border border-slate-800 rounded-xl px-3 py-1 text-sm outline-none font-mono" />
-                                        <button onClick={() => onInjectMoney(agent.id)} className="bg-amber-600 hover:bg-amber-500 p-2 rounded-xl transition-all"><HandCoins size={16} /></button>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </section>
                 </div>
             )}
