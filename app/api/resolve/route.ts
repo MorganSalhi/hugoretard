@@ -1,3 +1,4 @@
+// app/api/resolve/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { calculateHugoScore } from "@/lib/scoring";
@@ -13,10 +14,10 @@ export async function POST(req: Request) {
 
     const course = await prisma.course.findUnique({
       where: { id: courseId },
-      include: { 
+      include: {
         bets: {
-          include: { user: true } 
-        } 
+          include: { user: true }
+        }
       },
     });
 
@@ -27,18 +28,16 @@ export async function POST(req: Request) {
     const actualMinutes = actualH * 60 + actualM;
 
     // --- LOGIQUE WANTED LIST ---
-    // 1. On identifie qui était le n°1 juste avant ce verdict
     const wantedTarget = await prisma.user.findFirst({
-        orderBy: { walletBalance: 'desc' }
+      orderBy: { walletBalance: 'desc' }
     });
 
-    // 2. On regarde si ce leader a parié sur ce cours et quel est son score
     const wantedBet = course.bets.find(b => b.userId === wantedTarget?.id);
     let wantedScore = 0;
     if (wantedBet) {
-        const wDate = new Date(wantedBet.guessedTime);
-        const wMin = wDate.getHours() * 60 + wDate.getMinutes();
-        wantedScore = calculateHugoScore(actualMinutes, wMin);
+      const wDate = new Date(wantedBet.guessedTime);
+      const wMin = wDate.getHours() * 60 + wDate.getMinutes();
+      wantedScore = calculateHugoScore(actualMinutes, wMin);
     }
     // ----------------------------
 
@@ -46,10 +45,10 @@ export async function POST(req: Request) {
       const guessedDate = new Date(bet.guessedTime);
       const guessedMinutes = guessedDate.getHours() * 60 + guessedDate.getMinutes();
       const baseScore = calculateHugoScore(actualMinutes, guessedMinutes);
-      
+
       let streakBonus = 1;
       const currentStreak = bet.user.currentStreak;
-      
+
       if (currentStreak >= 10) streakBonus = 2.0;
       else if (currentStreak >= 5) streakBonus = 1.5;
       else if (currentStreak >= 3) streakBonus = 1.2;
@@ -67,15 +66,23 @@ export async function POST(req: Request) {
       }
 
       // --- APPLICATION DE LA PRIME WANTED ---
-      // Si l'agent n'est pas lui-même la cible et qu'il a un meilleur score que la cible (qui doit avoir parié)
       if (bet.userId !== wantedTarget?.id && wantedScore > 0 && baseScore > wantedScore) {
-          gainsFinaux += 5000; // Prime de capture
+        gainsFinaux += 5000; // Prime de capture
       }
       // --------------------------------------
 
+      // --- NOUVELLE LOGIQUE DE SÉRIE (Basée sur le profit) ---
       let nextStreak = currentStreak;
-      if (baseScore >= 700) nextStreak += 1;
-      else if (baseScore < 300) nextStreak = 0;
+
+      if (gainsFinaux > bet.amount) {
+        // Si l'agent récupère plus que ce qu'il a misé = Profit -> La série augmente
+        nextStreak += 1;
+      } else if (gainsFinaux < bet.amount) {
+        // S'il perd de l'argent -> La série retourne à 0
+        nextStreak = 0;
+      }
+      // Note: Si gainsFinaux == bet.amount (remboursé pile poil), la série reste telle quelle.
+      // -------------------------------------------------------
 
       return [
         prisma.bet.update({
@@ -84,7 +91,7 @@ export async function POST(req: Request) {
         }),
         prisma.user.update({
           where: { id: bet.userId },
-          data: { 
+          data: {
             walletBalance: { increment: gainsFinaux },
             currentStreak: nextStreak,
             bestStreak: nextStreak > bet.user.bestStreak ? nextStreak : bet.user.bestStreak
@@ -108,7 +115,7 @@ export async function POST(req: Request) {
       const gDate = new Date(bet.guessedTime);
       const gMinutes = gDate.getHours() * 60 + gDate.getMinutes();
       const score = calculateHugoScore(actualMinutes, gMinutes);
-      
+
       if (score === 1000) {
         await prisma.badge.upsert({
           where: { userId_type: { userId: bet.userId, type: "SNIPER" } },
@@ -116,7 +123,7 @@ export async function POST(req: Request) {
           create: { userId: bet.userId, type: "SNIPER" }
         });
       }
-      
+
       await checkAndAwardBadges(bet.userId);
     }
 

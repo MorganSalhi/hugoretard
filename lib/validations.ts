@@ -5,7 +5,7 @@ export const BetSchema = z.object({
   time: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "Format HH:mm requis"),
   amount: z.preprocess(
     (val) => Number(val), 
-    z.number().min(1, "La mise minimale est de 1 ₪").max(10000, "Mise maximale 10 000 ₪")
+    z.number().min(1, "La mise minimale est de 1 ₪")
   ),
 });
 
