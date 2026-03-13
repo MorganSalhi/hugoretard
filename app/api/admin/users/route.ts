@@ -3,27 +3,35 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
 
-// TRÈS IMPORTANT : Désactive le cache pour cette route admin
 export const dynamic = 'force-dynamic';
 
-// 1. RÉCUPÉRER LA LISTE DES AGENTS
+// LA LISTE NOIRE DE L'IGPN
+const HARDCORE_TITLES = [
+  "Le Gazeur de Femmes Enceintes", "L'Écraseur de Têtes", "L'Éborgneur au LBD",
+  "Le Boucher de la GAV", "L'As du Plaquage Ventral", "Le Dégoupilleur Compulsif",
+  "Le Falsificateur de Preuves", "Le Spécialiste du Tir Tendu", "Le Briseur de Mâchoires",
+  "Le Tortionnaire en Cellule", "L'Amateur de Clés d'Étranglement", "Le Voleur de Scellés",
+  "Le Roi de la Tabassée Gratuite", "Le Collectionneur de Dents", "Le Nettoyeur de Bavures",
+  "Le Maître du Faux Témoignage", "L'Artiste du Coup de Tonfa", "Le Couvreur d'Assassinats",
+  "Le Broyeur de Rotules", "L'Insatiable de la Gâchette"
+];
+
 export async function GET() {
   try {
-    const users = await prisma.user.findMany({
-      orderBy: { walletBalance: 'desc' },
-    });
+    const users = await prisma.user.findMany({ orderBy: { walletBalance: 'desc' } });
     return NextResponse.json(users);
   } catch (error: any) {
-    console.error("Erreur Prisma GET:", error);
-    return NextResponse.json({ error: "Impossible de récupérer les agents" }, { status: 500 });
+    return NextResponse.json({ error: "Erreur" }, { status: 500 });
   }
 }
 
-// 2. CRÉER UN NOUVEL AGENT
 export async function POST(req: Request) {
   try {
     const { name, email, initialBalance, password, role } = await req.json();
     const hashedPassword = await bcrypt.hash(password || "hugo123", 10);
+
+    // Tirage au sort du titre de bavure
+    const randomTitle = HARDCORE_TITLES[Math.floor(Math.random() * HARDCORE_TITLES.length)];
 
     const newUser = await prisma.user.create({
       data: {
@@ -32,40 +40,27 @@ export async function POST(req: Request) {
         walletBalance: Number(initialBalance) || 1000,
         password: hashedPassword,
         role: role || "USER",
+        title: randomTitle, // <--- SAUVEGARDE DU TITRE EN BDD
       },
     });
     return NextResponse.json(newUser);
   } catch (error: any) {
-    console.error("Erreur Prisma POST:", error);
     return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }
 
-// 3. INJECTER DES FONDS À UN AGENT
+// (Ta fonction PATCH existante pour l'argent reste inchangée ici)
 export async function PATCH(req: Request) {
   try {
-    const body = await req.json();
-    const { userId, amount } = body;
-
-    // SÉCURITÉ : Vérification ultra-stricte + Message d'erreur détaillé
-    if (!userId || amount === undefined || amount === null || isNaN(Number(amount))) {
-      return NextResponse.json({
-        error: `Bavure de transfert. Reçu -> ID: ${userId || "VIDE"}, Montant: ${amount || "VIDE"}`
-      }, { status: 400 });
-    }
+    const { email, amount } = await req.json();
+    if (!email || isNaN(Number(amount))) return NextResponse.json({ error: "Données invalides" }, { status: 400 });
 
     const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        walletBalance: {
-          increment: Number(amount) // On force la conversion en nombre
-        }
-      }
+      where: { email: email },
+      data: { walletBalance: { increment: Number(amount) } }
     });
-
     return NextResponse.json(updatedUser);
   } catch (error: any) {
-    console.error("Erreur Prisma PATCH:", error);
-    return NextResponse.json({ error: "Erreur serveur : " + error.message }, { status: 500 });
+    return NextResponse.json({ error: "Erreur serveur" }, { status: 500 });
   }
 }

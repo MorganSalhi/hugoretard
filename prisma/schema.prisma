@@ -13,7 +13,8 @@ model User {
   name          String
   email         String       @unique
   password      String?
-  image         String?      // <--- VÉRIFIE QUE CETTE LIGNE EST BIEN LÀ
+  image         String?      
+  title         String?
   walletBalance Int          @default(1000)
   role          Role         @default(USER)
   createdAt     DateTime     @default(now())

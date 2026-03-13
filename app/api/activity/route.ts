@@ -8,7 +8,8 @@ export async function GET() {
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
-        user: { select: { name: true } },
+        // 1. AJOUT DE "title: true" POUR RÉCUPÉRER LE TITRE EN BDD
+        user: { select: { name: true, title: true } },
         course: { select: { subject: true } }
       }
     });
@@ -17,6 +18,8 @@ export async function GET() {
     const formattedActivity = activities.map((bet: any) => ({
       id: bet.id,
       user: bet.user?.name || "Anonyme",
+      // 2. ON AJOUTE LE TITRE DANS LES DONNÉES ENVOYÉES
+      userTitle: bet.user?.title || "L'Adjoint",
       subject: bet.course?.subject || "Sujet inconnu",
       amount: bet.amount,
       type: bet.pointsEarned && bet.pointsEarned > 0 ? "WIN" : "BET",
