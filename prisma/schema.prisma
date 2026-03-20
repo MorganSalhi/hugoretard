@@ -49,9 +49,9 @@ model Bet {
   guessedTime  DateTime
   amount       Int      @default(100)
   pointsEarned Int?     @default(0)
-  appliedItem  String?  // <--- On stocke ici l'item utilisé (VEST, WARRANT, etc.)
-  user         User     @relation(fields: [userId], references: [id])
-  course       Course   @relation(fields: [courseId], references: [id])
+  appliedItem  String?  
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
 
   @@unique([userId, courseId])
