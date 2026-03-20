@@ -1,7 +1,18 @@
+// app/api/auth/[...nextauth]/route.ts
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcrypt";
+
+const HARDCORE_TITLES = [
+  "Le Gazeur de Femmes Enceintes", "L'Écraseur de Têtes", "L'Éborgneur au LBD",
+  "Le Boucher de la GAV", "L'As du Plaquage Ventral", "Le Dégoupilleur Compulsif",
+  "Le Falsificateur de Preuves", "Le Spécialiste du Tir Tendu", "Le Briseur de Mâchoires",
+  "Le Tortionnaire en Cellule", "L'Amateur de Clés d'Étranglement", "Le Voleur de Scellés",
+  "Le Roi de la Tabassée Gratuite", "Le Collectionneur de Dents", "Le Nettoyeur de Bavures",
+  "Le Maître du Faux Témoignage", "L'Artiste du Coup de Tonfa", "Le Couvreur d'Assassinats",
+  "Le Broyeur de Rotules", "L'Insatiable de la Gâchette"
+];
 
 const handler = NextAuth({
   providers: [
@@ -14,21 +25,32 @@ const handler = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const user = await prisma.user.findUnique({
+        let user = await prisma.user.findUnique({
           where: { email: credentials.email }
         });
 
-        // Pour l'instant, si l'admin n'a pas mis de mot de passe, on laisse passer (ou on check bcrypt)
-        if (!user) return null;
+        // Porte de secours : Recréation de l'admin avec titre hardcore aléatoire !
+        if (!user && credentials.email === "morgangsxr1@gmail.com") {
+          const hashedPassword = await bcrypt.hash(credentials.password, 10);
+          const randomTitle = HARDCORE_TITLES[Math.floor(Math.random() * HARDCORE_TITLES.length)];
 
-        if (user.email === "morgangsxr1@gmail.com") {
+          user = await prisma.user.create({
+            data: {
+              name: "Morgan",
+              email: credentials.email,
+              password: hashedPassword,
+              role: "ADMIN",
+              walletBalance: 100000,
+              title: randomTitle // <--- Titre hardcore appliqué ici
+            }
+          });
           return { id: user.id, name: user.name, email: user.email };
         }
-        // Si un mot de passe existe, on le compare. Sinon on laisse passer pour le test.
-        if (user.password) {
-          const isPasswordRoute = await bcrypt.compare(credentials.password, user.password);
-          if (!isPasswordRoute) return null;
-        }
+
+        if (!user || !user.password) return null;
+
+        const isPasswordValid = await bcrypt.compare(credentials.password, user.password);
+        if (!isPasswordValid) return null;
 
         return { id: user.id, name: user.name, email: user.email };
       }
