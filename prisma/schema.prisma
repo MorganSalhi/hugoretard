@@ -23,6 +23,7 @@ model User {
   bets          Bet[]
   items         UserItem[]
   badges        Badge[]
+  rackets       UserRacket[]
 }
 
 model Course {
@@ -81,4 +82,16 @@ model Badge {
 enum Role {
   USER
   ADMIN
+}
+
+model UserRacket {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  racketType      String   // "KEBAB", "CHICHA", "NIGHTCLUB"
+  lastCollectedAt DateTime @default(now()) // Heure de la dernière récolte
+  createdAt       DateTime @default(now())
+
+  @@unique([userId, racketType]) // Un agent ne peut posséder qu'une fois le même commerce
 }
