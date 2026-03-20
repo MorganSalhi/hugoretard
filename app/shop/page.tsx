@@ -97,12 +97,14 @@ export default function ShopPage() {
         })}
       </div>
 
-      {/* SECTION 2 : L'ARSENAL (OBJETS) */}
+{/* SECTION 2 : L'ARSENAL (OBJETS LÉGAUX) */}
       <h2 className="text-xl font-black uppercase italic mb-4 flex items-center gap-2 text-indigo-500 border-b border-slate-800 pb-2">
         <Icons.Shield size={20} /> Équipement Tactique
       </h2>
-      <div className="grid gap-6">
-        {Object.values(SHOP_ITEMS).map((item) => {
+      <div className="grid gap-6 mb-12">
+        {Object.values(SHOP_ITEMS)
+          .filter(item => ["VEST", "MAGNIFIER", "WARRANT"].includes(item.id))
+          .map((item) => {
           const Icon = item.icon;
           return (
             <div key={item.id} className="bg-slate-900/40 border border-slate-800 rounded-3xl p-6 flex flex-col gap-4">
@@ -114,13 +116,13 @@ export default function ShopPage() {
                   <p className="text-2xl font-mono font-black">{item.price} ₪</p>
                 </div>
               </div>
-
+              
               <div>
                 <h3 className="text-lg font-bold mb-1">{item.name}</h3>
                 <p className="text-sm text-slate-500 leading-relaxed">{item.description}</p>
               </div>
 
-              <button
+              <button 
                 onClick={() => buyItem(item.id as ItemType)}
                 disabled={!!loading}
                 className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all"
@@ -131,6 +133,45 @@ export default function ShopPage() {
           );
         })}
       </div>
+
+      {/* SECTION 3 : LE MARCHÉ NOIR (COUPS BAS) */}
+      <h2 className="text-xl font-black uppercase italic mb-4 flex items-center gap-2 text-red-500 border-b border-slate-800 pb-2">
+        <Icons.Skull size={20} /> Marché Noir (Coups Bas)
+      </h2>
+      <div className="grid gap-6">
+        {Object.values(SHOP_ITEMS)
+          .filter(item => ["IGPN_LETTER", "SUGAR"].includes(item.id))
+          .map((item) => {
+          const Icon = item.icon;
+          return (
+            <div key={item.id} className="bg-slate-900/40 border border-red-900/30 rounded-3xl p-6 flex flex-col gap-4 relative overflow-hidden">
+              <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-red-600 to-red-900 left-0"></div>
+              <div className="flex justify-between items-start">
+                <div className={`p-4 rounded-2xl bg-slate-950 border border-slate-800 ${item.color}`}>
+                  <Icon size={24} />
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-mono font-black text-red-400">{item.price} ₪</p>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-lg font-bold mb-1">{item.name}</h3>
+                <p className="text-sm text-slate-500 leading-relaxed">{item.description}</p>
+              </div>
+
+              <button 
+                onClick={() => buyItem(item.id as ItemType)}
+                disabled={!!loading}
+                className="w-full bg-red-900/80 hover:bg-red-800 text-red-100 disabled:opacity-50 py-4 rounded-2xl font-bold flex items-center justify-center gap-2 transition-all"
+              >
+                {loading === item.id ? <Loader2 className="animate-spin" /> : "ACHETER SOUS LE MANTEAU"}
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
     </div>
   );
 }
