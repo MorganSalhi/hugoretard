@@ -12,7 +12,8 @@ import {
   ShieldAlert, 
   ShoppingBag, 
   LogOut,
-  Skull // <-- L'icône du marché noir ajoutée ici
+  Skull,
+  Box,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -26,6 +27,7 @@ export default function Navbar() {
     { name: "I.G.P.N", href: "/igpn", icon: Skull, isSecret: true },
     { name: "Profil", href: "/profile", icon: UserCog },
     { name: "Admin", href: "/admin", icon: ShieldAlert },
+    { name: "Scellés", href: "/scelles", icon: Box },
   ];
 
   // On ne montre pas la Navbar sur la page de login (et intro)
