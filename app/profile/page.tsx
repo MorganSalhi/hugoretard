@@ -8,6 +8,7 @@ import * as Icons from "lucide-react";
 import ProfileStats from "@/components/ProfileStats";
 import ProfileAvatar from "@/components/ProfileAvatar"; // Le fameux composant d'upload
 import ProfileNameEdit from "@/components/ProfileNameEdit";
+import RacketCollection from "@/components/RacketCollection";
 
 export default async function ProfilePage() {
   const session = await getServerSession();
@@ -22,6 +23,7 @@ export default async function ProfilePage() {
     where: { email: session.user.email },
     include: {
       badges: true,
+      rackets: true,
       bets: {
         include: { course: true },
         orderBy: { createdAt: 'desc' }
@@ -53,6 +55,8 @@ export default async function ProfilePage() {
         <p className="text-slate-500 text-[10px] font-bold uppercase tracking-[0.2em] mt-2">{user.email}</p>
       </header>
 
+      <RacketCollection rackets={user.rackets} />
+      
       {/* CARTE DU GRADE ACTUEL */}
       <div className={`mb-8 p-6 rounded-3xl bg-slate-900/50 border-2 ${rank.border} relative overflow-hidden`}>
         <div className="flex items-center gap-4 mb-6 relative z-10">
