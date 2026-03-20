@@ -286,7 +286,7 @@ export default function LobbyDeParis() {
                             <div className="flex items-center gap-3">
                                 <div className={`w-1.5 h-1.5 rounded-full ${act.type === "WIN" ? "bg-green-500 shadow-[0_0_5px_green]" : "bg-blue-400"}`} />
                                 <p className="text-[10px] text-slate-300">
-                                    <span className="font-black text-blue-400 uppercase tracking-tighter">Adjoint {act.user}</span> {act.type === "WIN" ? "a détourné une prime sur" : "est en planque sur"} <span className="text-slate-100 italic font-bold">{act.subject}</span>
+                                    <span className="font-black text-blue-400 uppercase tracking-tighter">{act.userTitle} {act.user}</span> {act.type === "WIN" ? "a détourné une prime sur" : "est en planque sur"} <span className="text-slate-100 italic font-bold">{act.subject}</span>
                                 </p>
                             </div>
                             <span className="text-[8px] text-slate-600 font-mono italic">

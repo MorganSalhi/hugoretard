@@ -8,17 +8,16 @@ export async function GET() {
       take: 5,
       orderBy: { createdAt: 'desc' },
       include: {
-        // 1. AJOUT DE "title: true" POUR RÉCUPÉRER LE TITRE EN BDD
+        // 1. On ajoute "title: true" ici
         user: { select: { name: true, title: true } },
         course: { select: { subject: true } }
       }
     });
 
-    // On formate les données pour le flux en typant 'bet'
     const formattedActivity = activities.map((bet: any) => ({
       id: bet.id,
       user: bet.user?.name || "Anonyme",
-      // 2. ON AJOUTE LE TITRE DANS LES DONNÉES ENVOYÉES
+      // 2. On ajoute le userTitle ici (s'il n'en a pas, on met "L'Adjoint" par défaut)
       userTitle: bet.user?.title || "L'Adjoint",
       subject: bet.course?.subject || "Sujet inconnu",
       amount: bet.amount,
