@@ -14,7 +14,8 @@ import {
   LogOut,
   Skull,
   Box,
-  ClipboardList
+  ClipboardList,
+  Users,
 } from "lucide-react";
 
 export default function Navbar() {
@@ -24,6 +25,7 @@ export default function Navbar() {
     { name: "Lobby", href: "/lobby", icon: LayoutDashboard },
     { name: "Quotas", href: "/missions", icon: ClipboardList },
     { name: "Hiérarchie", href: "/leaderboard", icon: Trophy },
+    { name: "Q.G", href: "/qg", icon: Users },
     { name: "Archives", href: "/history", icon: History },
     { name: "Boutique", href: "/shop", icon: ShoppingBag },
     { name: "I.G.P.N", href: "/igpn", icon: Skull, isSecret: true },

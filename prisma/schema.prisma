@@ -24,6 +24,8 @@ model User {
   lootboxes      Int            @default(0) // Nombre de caisses de contrebande à ouvrir
   lastDailyReset DateTime       @default(now()) // Pour savoir si on doit lui redonner des missions
   missions       DailyMission[] // <--- Le lien vers ses missions du jour
+  brigadeId      String?
+  brigade        Brigade?       @relation(fields: [brigadeId], references: [id])
   bets          Bet[]
   items         UserItem[]
   badges        Badge[]
@@ -111,4 +113,14 @@ model DailyMission {
   progress    Int      @default(0) // Où en est le joueur
   completed   Boolean  @default(false)
   createdAt   DateTime @default(now())
+}
+
+model Brigade {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  bank        Int      @default(0) // L'argent total donné par les membres
+  leaderId    String   // L'ID du créateur de la brigade
+  createdAt   DateTime @default(now())
+
+  members     User[]   // La liste des agents qui en font partie
 }
