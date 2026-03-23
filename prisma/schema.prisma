@@ -124,3 +124,10 @@ model Brigade {
 
   members     User[]   // La liste des agents qui en font partie
 }
+
+model GlobalEvent {
+  id          String   @id @default("CURRENT_EVENT") // On force l'ID pour n'avoir qu'un seul événement actif à la fois
+  type        String   // Ex: "DOUBLE_BETS", "CHEAP_SHOP", "FREEZE_RACKETS"
+  message     String   // Le texte qui va s'afficher en haut du site
+  expiresAt   DateTime // La date et l'heure de fin de l'alerte
+}

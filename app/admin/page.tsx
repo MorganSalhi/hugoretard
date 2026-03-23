@@ -7,7 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useSession } from "next-auth/react";
 import { redirect } from "next/navigation";
 import { CreateCourseSchema, CreateUserSchema } from "@/lib/validations";
-import toast from "react-hot-toast"; // <-- On importe nos notifications stylées !
+import toast from "react-hot-toast";
 import {
     ShieldAlert,
     PlusCircle,
@@ -18,7 +18,8 @@ import {
     UserPlus,
     HandCoins,
     BookOpen,
-    Lock
+    Lock,
+    Radio // <-- L'icône de la radio ajoutée ici
 } from "lucide-react";
 
 export default function AdminPage() {
@@ -141,14 +142,10 @@ export default function AdminPage() {
         } finally { setLoading(false); }
     };
 
-    // LA FONCTION CORRIGÉE POUR INJECTER L'ARGENT
     const onInjectMoney = async (userId: string) => {
-        if (!userId) {
-            return toast.error("Erreur : Impossible d'identifier cet agent.");
-        }
+        if (!userId) return toast.error("Erreur : Impossible d'identifier cet agent.");
 
         const amount = Number(creditAmounts[userId]);
-
         if (isNaN(amount) || amount <= 0) {
             return toast.error("Somme invalide, veuillez entrer un montant valide (> 0).");
         }
@@ -175,6 +172,23 @@ export default function AdminPage() {
             toast.error("Standard injoignable", { id: tId });
         } finally {
             setLoading(false);
+        }
+    };
+
+    // --- NOUVELLE LOGIQUE POUR LA RADIO ---
+    const triggerEvent = async (action: "START" | "STOP") => {
+        try {
+            const res = await fetch("/api/events/radio", {
+                method: "POST",
+                body: JSON.stringify({ action })
+            });
+            if (res.ok) {
+                toast.success(action === "START" ? "Alerte globale lancée !" : "Alerte coupée.");
+            } else {
+                toast.error("Impossible de joindre l'antenne.");
+            }
+        } catch (e) {
+            toast.error("Erreur de transmission.");
         }
     };
 
@@ -241,25 +255,55 @@ export default function AdminPage() {
                 </div>
             ) : (
                 <div className="grid lg:grid-cols-2 gap-8">
-                    <section className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 shadow-xl h-fit">
-                        <div className="flex items-center gap-2 mb-6 text-indigo-400">
-                            <UserPlus size={20} />
-                            <h2 className="text-lg font-bold">Recruter un Agent</h2>
-                        </div>
-                        <form onSubmit={userForm.handleSubmit(onCreateUser)} className="space-y-5">
-                            <input {...userForm.register("name")} placeholder="Nom de l'agent" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
-                            <input {...userForm.register("email")} placeholder="Email (Identifiant)" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
-                            <div className="relative">
-                                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
-                                <input {...userForm.register("password")} type="password" placeholder="Mot de passe temporaire" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 pl-12 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+                    {/* Colonne de Gauche : Actions Admin */}
+                    <div className="space-y-8">
+                        {/* Section Recrutement */}
+                        <section className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 shadow-xl h-fit">
+                            <div className="flex items-center gap-2 mb-6 text-indigo-400">
+                                <UserPlus size={20} />
+                                <h2 className="text-lg font-bold">Recruter un Agent</h2>
                             </div>
-                            <input {...userForm.register("initialBalance")} type="number" placeholder="Budget initial (₪)" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
-                            <button disabled={loading} type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-2">
-                                {loading ? <Loader2 className="animate-spin" /> : <UserPlus size={20} />} ENRÔLER L'AGENT
-                            </button>
-                        </form>
-                    </section>
+                            <form onSubmit={userForm.handleSubmit(onCreateUser)} className="space-y-5">
+                                <input {...userForm.register("name")} placeholder="Nom de l'agent" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+                                <input {...userForm.register("email")} placeholder="Email (Identifiant)" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+                                <div className="relative">
+                                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={16} />
+                                    <input {...userForm.register("password")} type="password" placeholder="Mot de passe temporaire" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 pl-12 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+                                </div>
+                                <input {...userForm.register("initialBalance")} type="number" placeholder="Budget initial (₪)" className="w-full bg-slate-950 border border-slate-800 rounded-xl p-4 outline-none focus:ring-2 focus:ring-indigo-500 transition-all" />
+                                <button disabled={loading} type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-2xl font-bold flex items-center justify-center gap-2">
+                                    {loading ? <Loader2 className="animate-spin" /> : <UserPlus size={20} />} ENRÔLER L'AGENT
+                                </button>
+                            </form>
+                        </section>
 
+                        {/* --- NOUVELLE SECTION RADIO / ÉVÉNEMENTS --- */}
+                        <section className="bg-slate-900 border border-red-900/30 rounded-3xl p-6 shadow-xl h-fit relative overflow-hidden">
+                            <div className="absolute top-0 w-full h-1 bg-gradient-to-r from-red-600 to-red-900 left-0"></div>
+                            <h2 className="text-xl font-black uppercase italic mb-4 flex items-center gap-2 text-white">
+                                <Radio size={24} className="text-red-500" /> Radio du Central
+                            </h2>
+                            <p className="text-sm text-slate-400 mb-6">Déclenchez un événement aléatoire (Double Gains, Marché Noir à -50%, Gel des Rackets) pour tous les joueurs pendant 24h.</p>
+                            
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={() => triggerEvent("START")}
+                                    className="flex-1 bg-red-600 hover:bg-red-500 text-white font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 uppercase text-[10px] sm:text-xs"
+                                >
+                                    Lancer une Alerte
+                                </button>
+                                <button 
+                                    onClick={() => triggerEvent("STOP")}
+                                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-xl transition-all flex items-center justify-center gap-2 uppercase text-[10px] sm:text-xs border border-slate-700"
+                                >
+                                    Couper
+                                </button>
+                            </div>
+                        </section>
+                        {/* ------------------------------------------- */}
+                    </div>
+
+                    {/* Colonne de Droite : Effectifs */}
                     <section className="bg-slate-900/50 border border-slate-800 rounded-3xl p-6 shadow-xl h-fit">
                         <div className="flex items-center gap-2 mb-6 text-amber-400">
                             <HandCoins size={20} />
@@ -268,7 +312,7 @@ export default function AdminPage() {
                         {fetching ? (
                             <div className="flex justify-center py-10"><Loader2 className="animate-spin text-amber-500" /></div>
                         ) : (
-                            <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
+                            <div className="space-y-4 max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
                                 {agents.map((agent) => (
                                     <div key={agent.id} className="bg-slate-950 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3">
                                         <div className="flex justify-between items-start">
@@ -279,7 +323,6 @@ export default function AdminPage() {
                                             <p className="font-mono text-amber-400 font-bold">{agent.walletBalance.toLocaleString()} ₪</p>
                                         </div>
                                         <div className="flex gap-2">
-                                            {/* On sécurise le format de l'input pour être sûr de récupérer un Nombre */}
                                             <input
                                                 type="number"
                                                 placeholder="+ ₪"

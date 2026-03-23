@@ -4,6 +4,7 @@ import Navbar from "@/components/Navbar";
 import { Providers } from "@/components/Providers";
 import { Toaster } from "react-hot-toast"; // Un seul import ici
 import type { Metadata } from "next";
+import RadioAlert from "@/components/RadioAlert";
 
 export const metadata: Metadata = {
   title: "HugoLate",
@@ -19,6 +20,7 @@ export default function RootLayout({
     <html lang="fr">
       <body className="antialiased bg-slate-950 text-slate-100">
         <Providers>
+          <RadioAlert />
           <main className="pb-24">
             {children}
           </main>

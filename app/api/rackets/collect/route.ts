@@ -9,6 +9,11 @@ export async function POST() {
         const session = await getServerSession();
         if (!session?.user?.email) return NextResponse.json({ error: "Non autorisé" }, { status: 401 });
 
+        const currentEvent = await prisma.globalEvent.findUnique({ where: { id: "CURRENT_EVENT" } });
+        if (currentEvent && new Date() < new Date(currentEvent.expiresAt) && currentEvent.type === "FREEZE_RACKETS") {
+            return NextResponse.json({ error: "Descente de l'IGPN en cours ! L'économie souterraine est gelée." }, { status: 403 });
+        }
+
         const user = await prisma.user.findUnique({
             where: { email: session.user.email },
             include: { rackets: true }

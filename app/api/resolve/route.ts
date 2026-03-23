@@ -24,6 +24,9 @@ export async function POST(req: Request) {
     if (!course) return NextResponse.json({ error: "Dossier introuvable" }, { status: 404 });
     if (course.status === "FINISHED") return NextResponse.json({ error: "Enquête déjà classée" }, { status: 400 });
 
+    const currentEvent = await prisma.globalEvent.findUnique({ where: { id: "CURRENT_EVENT" } });
+    const isDoubleBets = currentEvent && new Date() < new Date(currentEvent.expiresAt) && currentEvent.type === "DOUBLE_BETS";
+
     const [actualH, actualM] = actualTime.split(":").map(Number);
     const actualMinutes = actualH * 60 + actualM;
 
@@ -70,6 +73,10 @@ export async function POST(req: Request) {
       let gainsReels = Math.round((baseScore / 100) * bet.amount * streakBonus);
       let gainsFinaux = gainsReels;
 
+      if (isDoubleBets) {
+          gainsFinaux *= 2;
+      }
+      
       if (bet.appliedItem === "WARRANT") {
         gainsFinaux *= 2;
       } else if (bet.appliedItem === "VEST") {
