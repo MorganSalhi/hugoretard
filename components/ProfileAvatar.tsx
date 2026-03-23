@@ -15,8 +15,8 @@ export default function ProfileAvatar({ initialImage, userName }: { initialImage
         if (!file) return;
 
         // Limite de taille fixée à 1 Mo (très important pour ne pas saturer la base de données !)
-        if (file.size > 1 * 1024 * 1024) {
-            toast.error("Le fichier est trop lourd (Max 1 Mo)");
+        if (file.size > 5 * 1024 * 1024) {
+            toast.error("Le fichier est trop lourd (Max 5 Mo)");
             return;
         }
 
