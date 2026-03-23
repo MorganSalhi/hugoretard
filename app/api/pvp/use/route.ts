@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
+import { updateMissionProgress } from "@/lib/missions";
 
 export async function POST(req: Request) {
     try {
@@ -51,7 +52,7 @@ export async function POST(req: Request) {
                 data: updateData
             })
         ]);
-
+        await updateMissionProgress(attacker.id, "USE_IGPN");
         return NextResponse.json({ success: true, targetName: target.name });
 
     } catch (error) {

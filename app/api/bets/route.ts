@@ -1,6 +1,7 @@
 import { getServerSession } from "next-auth";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { updateMissionProgress } from "@/lib/missions";
 
 // 1. GET : Récupérer les infos de l'agent connecté (Solde, Grade)
 export async function GET() {
@@ -82,7 +83,7 @@ export async function POST(req: Request) {
         },
       });
     });
-
+    await updateMissionProgress(user.id, "PLACE_BETS");
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Erreur lors du pari" }, { status: 500 });

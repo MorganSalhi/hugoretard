@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { SHOP_ITEMS, type ItemType } from "@/lib/items"; // Ajout du type ici
+import { updateMissionProgress } from "@/lib/missions";
 
 export async function POST(req: Request) {
   try {
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
         create: { userId: user.id, itemType, quantity: 1 }
       })
     ]);
-
+    await updateMissionProgress(user.id, "BUY_SHOP");
     return NextResponse.json({ success: true });
   } catch (error) {
     return NextResponse.json({ error: "Erreur lors de la transaction" }, { status: 500 });

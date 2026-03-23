@@ -2,6 +2,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
+import { updateMissionProgress } from "@/lib/missions"; // <-- Le mouchard
 
 export async function POST(req: Request) {
     try {
@@ -10,15 +11,17 @@ export async function POST(req: Request) {
 
         const { amount } = await req.json();
         
-        // Anti-triche basique (personne ne peut gagner 100 000 d'un coup sur un jeu snake)
         if (amount <= 0 || amount > 5000) {
             return NextResponse.json({ error: "Montant suspect, l'IGPN enquête..." }, { status: 400 });
         }
 
-        await prisma.user.update({
+        const user = await prisma.user.update({
             where: { email: session.user.email },
             data: { walletBalance: { increment: amount } }
         });
+
+        // <-- ON DÉCLENCHE L'AVANCÉE DE LA MISSION ICI
+        await updateMissionProgress(user.id, "PLAY_SCELLES");
 
         return NextResponse.json({ success: true });
     } catch (error) {
