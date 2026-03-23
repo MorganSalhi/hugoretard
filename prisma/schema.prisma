@@ -21,6 +21,9 @@ model User {
   currentStreak Int          @default(0)
   bestStreak    Int          @default(0)
   nextBetMalus  Int          @default(0)
+  lootboxes      Int            @default(0) // Nombre de caisses de contrebande à ouvrir
+  lastDailyReset DateTime       @default(now()) // Pour savoir si on doit lui redonner des missions
+  missions       DailyMission[] // <--- Le lien vers ses missions du jour
   bets          Bet[]
   items         UserItem[]
   badges        Badge[]
@@ -95,4 +98,17 @@ model UserRacket {
   createdAt       DateTime @default(now())
 
   @@unique([userId, racketType]) // Un agent ne peut posséder qu'une fois le même commerce
+}
+
+model DailyMission {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  actionType  String   // Ex: "PLACE_BETS", "USE_IGPN", "PLAY_SCELLES", "BUY_SHOP"
+  description String   // Ex: "Dresser 2 PV au pif (Parier)"
+  target      Int      // Ex: 2 (Le nombre de fois qu'il faut le faire)
+  progress    Int      @default(0) // Où en est le joueur
+  completed   Boolean  @default(false)
+  createdAt   DateTime @default(now())
 }
